@@ -13,6 +13,11 @@ namespace DeviceCatcher
     {
         private int mDeviceWidth = 320;
         private int mDeviceHeight = 480;
+
+        // We introduced these two vars, because C# cannot create a form larger than PC screen.
+        private int mCurWidth = 0;
+        private int mCurHeight = 0;
+
         public CaptureSettingUI()
         {
             InitializeComponent();
@@ -48,9 +53,10 @@ namespace DeviceCatcher
 
         private void rotateBtn_Click(object sender, EventArgs e)
         {
-            int tmp = this.Width;
-            this.Width = this.Height;
-            this.Height = tmp;
+            this.Size = new Size(mCurHeight, mCurWidth);
+            int tmp = this.mCurWidth;
+            this.mCurWidth = this.mCurHeight;
+            this.mCurHeight = tmp;
         }
 
         public bool Rotated
@@ -65,6 +71,8 @@ namespace DeviceCatcher
         {
             this.mDeviceWidth = w;
             this.mDeviceHeight = h;
+            this.mCurWidth = w;
+            this.mCurHeight = h;
             this.Size = new Size(w, h);
         }
     }
