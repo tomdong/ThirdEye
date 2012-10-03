@@ -20,17 +20,27 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
+import android.view.MotionEvent;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class eyeActivity extends Activity {
+public class eyeActivity extends Activity implements OnGestureListener{
 	private static ServerSocket imageSocket = null;
+	private static DatagramSocket eventSocket = null;
 	private InetAddress senderAddress = null;
 	private String info = "";
 	private String msg = "";
 	private static boolean runningOnBackground = false;
 	private static boolean reportedError = false;
 	private static boolean hasBegun = false;
+	
+	private final int CLICK = 1;
+	private final int RIGHT_CLICK = 2;
+	
+	private GestureDetector mGestureDetector;
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,6 +55,40 @@ public class eyeActivity extends Activity {
         runningOnBackground = false;
         reportedError = false;
         hasBegun = false;
+        
+        //regTouchEventListener();
+        mGestureDetector = new GestureDetector(this);
+    }
+    
+    private void sendTouchEvent(int type, MotionEvent e)
+    {
+    	try
+    	{
+    		if(null != eventSocket)
+    		{
+    			try {
+					eventSocket.close();
+				} catch (Exception ex) {
+					// TODO Auto-generated catch block
+					ex.printStackTrace();
+				}
+    			eventSocket = null;
+    		}
+    		if(null != senderAddress)
+    		{
+    			eventSocket = new DatagramSocket();
+		        String message = String.valueOf(type)
+		        + "|" + String.valueOf((int)e.getX())
+		        + "|" + String.valueOf((int)e.getY());
+		        byte[]data = message.getBytes();
+		        DatagramPacket thePacket =new DatagramPacket(data, data.length, senderAddress, 9098);
+		        eventSocket.send(thePacket);
+    		}
+    	}
+    	catch(Exception ex)
+    	{
+    		msg = "exception" + ex.getMessage();
+    	}
     }
     
     private String getInfo()
@@ -83,11 +127,11 @@ public class eyeActivity extends Activity {
     	}
     	try
     	{
-	        DatagramSocket theSocket = new DatagramSocket(); 
+    		DatagramSocket socket = new DatagramSocket(); 
 	        String message = "done";//getSizeInfo(); 
 	        byte[]data  = message.getBytes();
 	        DatagramPacket thePacket =new DatagramPacket(data,data.length, senderAddress, 9097); 
-	        theSocket.send(thePacket);
+	        socket.send(thePacket);
     	}
     	catch(Exception ex)
     	{
@@ -197,9 +241,9 @@ public class eyeActivity extends Activity {
 			{
 				if(!reportedError)
 				{
-					Message msg = new Message();
-					msg.what = 1;
-					handler.sendMessage(msg);
+					Message msg1 = new Message();
+					msg1.what = 1;
+					handler.sendMessage(msg1);
 					reportedError = true;
 				}
 			}
@@ -306,4 +350,51 @@ public class eyeActivity extends Activity {
 			super.handleMessage(msg);
 		}
 	};
+	
+	
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		// TODO Auto-generated method stub
+		//return super.onTouchEvent(event);
+		return mGestureDetector.onTouchEvent(event);
+	}
+
+	@Override
+	public boolean onDown(MotionEvent e) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
+			float velocityY) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void onLongPress(MotionEvent e) {
+		// TODO Auto-generated method stub
+		sendTouchEvent(RIGHT_CLICK, e);
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
+			float distanceY) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void onShowPress(MotionEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean onSingleTapUp(MotionEvent e) {
+		// TODO Auto-generated method stub
+		sendTouchEvent(CLICK, e);
+		return false;
+	}
 }

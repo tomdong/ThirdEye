@@ -13,7 +13,39 @@ namespace DeviceCatcher
 {
     public partial class MainForm : Form
     {
+        [System.Runtime.InteropServices.DllImport("user32")]
+        private static extern bool SetCursorPos(int X, int Y);
+
+        [System.Runtime.InteropServices.DllImport("user32")]
+        private static extern int mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+
+        //[Flags]
+        //enum MouseEventFlag : uint
+        //{
+        //    Move = 0x0001,
+        //    LeftDown = 0x0002,
+        //    LeftUp = 0x0004,
+        //    RightDown = 0x0008,
+        //    RightUp = 0x0010,
+        //    MiddleDown = 0x0020,
+        //    MiddleUp = 0x0040,
+        //    XDown = 0x0080,
+        //    XUp = 0x0100,
+        //    Wheel = 0x0800,
+        //    VirtualDesk = 0x4000,
+        //    Absolute = 0x8000
+        //}
+        const int MOUSEEVENTF_MOVE = 0x0001;
+        const int MOUSEEVENTF_LEFTDOWN = 0x0002;
+        const int MOUSEEVENTF_LEFTUP = 0x0004;
+        const int MOUSEEVENTF_RIGHTDOWN = 0x0008;
+        const int MOUSEEVENTF_RIGHTUP = 0x0010;
+        const int MOUSEEVENTF_MIDDLEDOWN = 0x0020;
+        const int MOUSEEVENTF_MIDDLEUP = 0x0040;
+        const int MOUSEEVENTF_ABSOLUTE = 0x8000;
+
         private Thread mScanThread = null;
+        private Thread mWaitEventThread = null;
         private Thread mSendThread = null;
         private List<EndPoint> mDeviceList = new List<EndPoint>();
         private IPEndPoint mDeviceEndPoint = null;
@@ -28,6 +60,7 @@ namespace DeviceCatcher
             InitializeComponent();
             mScanThread = new Thread(new ThreadStart(scan));
             mScanThread.Start();
+            waitEvent();
         }
 
         private void findBtn_Click(object sender, EventArgs e)
@@ -78,8 +111,6 @@ namespace DeviceCatcher
                     this.sendToBtn.Text = ex.Message;
                 }
             }
-
-            this.sendToBtn.Text = "TTT";
         }
 
         private void startScanning()
@@ -111,6 +142,67 @@ namespace DeviceCatcher
             {
                 return false;
             }
+        }
+
+        private void waitTouchEvent()
+        {
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPEndPoint iep = new IPEndPoint(IPAddress.Any, 9098);
+            EndPoint ep = (EndPoint)iep;
+            socket.Bind(iep);
+            while (true)
+            {
+                byte[] buffer = new byte[32];
+                try
+                {
+                    if (socket.ReceiveFrom(buffer, ref ep) > 0)
+                    {
+                        if (null == captureUI)
+                        {
+                            continue;
+                        }
+                        string info = Encoding.ASCII.GetString(buffer);
+                        string[] sAll = info.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (sAll.Length < 3)
+                        {
+                            continue;
+                        }
+                        int type = int.Parse(sAll[0]);
+                        int x = int.Parse(sAll[1]) + captureUI.Location.X;
+                        int y = int.Parse(sAll[2]) + captureUI.Location.Y;
+                        switch (type)
+                        {
+                            case 1:
+                                SetCursorPos(x, y);
+                                mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+                                break;
+                            case 2:
+                                SetCursorPos(x, y);
+                                mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP, x, y, 0, 0);
+                                break;
+                            default:
+                                //this.sendToBtn.Text = info;
+                                break;
+                        }
+                        //this.sendToBtn.Text = x.ToString() + "," + y.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.sendToBtn.Text = ex.Message;
+                }
+            }
+        }
+
+        private void waitEvent()
+        {
+            if (null != mWaitEventThread)
+            {
+                //There might be bug here.
+                return;
+            }
+            mWaitEventThread = new Thread(new ThreadStart(waitTouchEvent));
+            mWaitEventThread.Start();
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -145,6 +237,7 @@ namespace DeviceCatcher
             stopScanning();
             mSendThread = new Thread(new ThreadStart(test));
             mSendThread.Start();
+            showDeviceScreenViewPanel();
         }
 
         private void waitForReceiveComplete()
@@ -293,7 +386,7 @@ namespace DeviceCatcher
             testRotate();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void showDeviceScreenViewPanel()
         {
             if (null == captureUI)
             {
@@ -311,6 +404,11 @@ namespace DeviceCatcher
             }
             captureUI.setSize(curDeviceWidth, curDeviceHeight);
             captureUI.Show();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            showDeviceScreenViewPanel();
         }
 
         CaptureSettingUI captureUI = null;
