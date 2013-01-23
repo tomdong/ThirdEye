@@ -264,6 +264,7 @@ namespace DeviceCatcher
         {
             //int lastCode = 0;
             //while (true)
+            for(int i = 0; i < 10; ++i)
             {
                 Thread.Sleep(500);
                 try

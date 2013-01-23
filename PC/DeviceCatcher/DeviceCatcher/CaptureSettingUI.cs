@@ -63,7 +63,7 @@ namespace DeviceCatcher
         {
             get
             {
-                return this.Width != this.mDeviceWidth;
+                return this.Width != this.mDeviceWidth && this.Width != this.mDeviceWidth / 2;
             }
         }
 
