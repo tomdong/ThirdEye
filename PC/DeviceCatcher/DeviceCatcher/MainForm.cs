@@ -162,23 +162,27 @@ namespace DeviceCatcher
                             continue;
                         }
                         string info = Encoding.ASCII.GetString(buffer);
-                        string[] sAll = info.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (sAll.Length < 3)
-                        {
-                            continue;
-                        }
-                        int type = int.Parse(sAll[0]);
-                        int x = int.Parse(sAll[1]) + captureUI.Location.X;
-                        int y = int.Parse(sAll[2]) + captureUI.Location.Y;
+                        //string[] sAll = info.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        //if (sAll.Length < 3)
+                        //{
+                        //    continue;
+                        //}
+                        //int type = int.Parse(sAll[0]);
+                        //int x = int.Parse(sAll[1]) + captureUI.Location.X;
+                        //int y = int.Parse(sAll[2]) + captureUI.Location.Y;
+                        int type = int.Parse(info);
                         switch (type)
                         {
-                            case 1:
-                                SetCursorPos(x, y);
-                                mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-                                break;
-                            case 2:
-                                SetCursorPos(x, y);
-                                mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP, x, y, 0, 0);
+                            //case 1:
+                            //    SetCursorPos(x, y);
+                            //    mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+                            //    break;
+                            //case 2:
+                            //    SetCursorPos(x, y);
+                            //    mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP, x, y, 0, 0);
+                            //    break;
+                            case 3:
+                                sendImageData();
                                 break;
                             default:
                                 //this.sendToBtn.Text = info;
@@ -235,9 +239,14 @@ namespace DeviceCatcher
         private void sendToBtn_Click(object sender, EventArgs e)
         {
             stopScanning();
+            showDeviceScreenViewPanel();
+            sendImageData();
+        }
+
+        private void sendImageData()
+        {
             mSendThread = new Thread(new ThreadStart(test));
             mSendThread.Start();
-            showDeviceScreenViewPanel();
         }
 
         private void waitForReceiveComplete()
@@ -254,7 +263,7 @@ namespace DeviceCatcher
         private void test()
         {
             //int lastCode = 0;
-            while (true)
+            //while (true)
             {
                 Thread.Sleep(500);
                 try

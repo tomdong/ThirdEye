@@ -75,5 +75,25 @@ namespace DeviceCatcher
             this.mCurHeight = h;
             this.Size = new Size(w, h);
         }
+
+        //50%
+        private void button1_Click(object sender, EventArgs e)
+        {
+            int w = mDeviceWidth / 2;
+            int h = mDeviceHeight / 2;
+            this.Size = new Size(w, h);
+            this.mCurWidth = w;
+            this.mCurHeight = h;
+        }
+
+        //100%
+        private void button2_Click(object sender, EventArgs e)
+        {
+            int w = mDeviceWidth;
+            int h = mDeviceHeight;
+            this.Size = new Size(w, h);
+            this.mCurWidth = w;
+            this.mCurHeight = h;
+        }
     }
 }

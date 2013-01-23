@@ -1,13 +1,11 @@
 package com.tom;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -15,18 +13,24 @@ import com.tom.eye.R;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
-import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-public class eyeActivity extends Activity implements OnGestureListener{
+public class eyeActivity extends Activity{
 	private static ServerSocket imageSocket = null;
 	private static DatagramSocket eventSocket = null;
 	private InetAddress senderAddress = null;
@@ -38,8 +42,10 @@ public class eyeActivity extends Activity implements OnGestureListener{
 	
 	private final int CLICK = 1;
 	private final int RIGHT_CLICK = 2;
+	private final int REFRESH = 3;
 	
-	private GestureDetector mGestureDetector;
+	//Disable gesture.
+	//private GestureDetector mGestureDetector;
 	
     /** Called when the activity is first created. */
     @Override
@@ -56,8 +62,97 @@ public class eyeActivity extends Activity implements OnGestureListener{
         reportedError = false;
         hasBegun = false;
         
+        //Disable gesture per Jacky's request.
         //regTouchEventListener();
-        mGestureDetector = new GestureDetector(this);
+        //mGestureDetector = new GestureDetector(this);
+        createControlPanel();
+    }
+    
+    private void createControlPanel()
+    {
+    	mControlPanel = (LinearLayout)findViewById(R.id.controlPanel);
+		Button dockTopBtn = new Button(this);
+		dockTopBtn.setText("Top");
+		dockTopBtn.setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				imageView1.setScaleType(ScaleType.FIT_START);
+				mControlPanel.setVisibility(View.GONE);
+			}
+			
+		});
+		mControlPanel.addView(dockTopBtn);
+		
+		Button bottomTopBtn = new Button(this);
+		bottomTopBtn.setText("Bottom");
+		bottomTopBtn.setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				imageView1.setScaleType(ScaleType.FIT_END);
+				mControlPanel.setVisibility(View.GONE);
+			}
+			
+		});
+		mControlPanel.addView(bottomTopBtn);
+		
+		Button fitTopBtn = new Button(this);
+		fitTopBtn.setText("Center");
+		fitTopBtn.setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				imageView1.setScaleType(ScaleType.FIT_CENTER);
+				mControlPanel.setVisibility(View.GONE);
+			}
+			
+		});
+		mControlPanel.addView(fitTopBtn);
+		
+		Button refreshBtn = new Button(this);
+		refreshBtn.setText("Refresh");
+		refreshBtn.setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				sendRefreshRequest();
+				mControlPanel.setVisibility(View.GONE);
+			}
+			
+		});
+		mControlPanel.addView(refreshBtn);
+		
+		mControlPanel.setVisibility(View.GONE);
+    }
+    
+    private void sendRefreshRequest()
+    {
+    	try
+    	{
+    		if(null != eventSocket)
+    		{
+    			try {
+					eventSocket.close();
+				} catch (Exception ex) {
+					// TODO Auto-generated catch block
+					ex.printStackTrace();
+				}
+    			eventSocket = null;
+    		}
+    		if(null != senderAddress)
+    		{
+    			eventSocket = new DatagramSocket();
+		        String message = String.valueOf(REFRESH);
+		        byte[]data = message.getBytes();
+		        DatagramPacket thePacket =new DatagramPacket(data, data.length, senderAddress, 9098);
+		        eventSocket.send(thePacket);
+    		}
+    	}
+    	catch(Exception ex)
+    	{
+    		msg = "exception" + ex.getMessage();
+    	}
     }
     
     private void sendTouchEvent(int type, MotionEvent e)
@@ -351,50 +446,53 @@ public class eyeActivity extends Activity implements OnGestureListener{
 		}
 	};
 	
-	
+	private LinearLayout mControlPanel = null;
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		// TODO Auto-generated method stub
 		//return super.onTouchEvent(event);
-		return mGestureDetector.onTouchEvent(event);
+		mControlPanel.setVisibility(View.VISIBLE);
+		return true;
+		//Disable gesture.
+		//return mGestureDetector.onTouchEvent(event);
 	}
 
-	@Override
-	public boolean onDown(MotionEvent e) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
-			float velocityY) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void onLongPress(MotionEvent e) {
-		// TODO Auto-generated method stub
-		sendTouchEvent(RIGHT_CLICK, e);
-	}
-
-	@Override
-	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
-			float distanceY) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void onShowPress(MotionEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean onSingleTapUp(MotionEvent e) {
-		// TODO Auto-generated method stub
-		sendTouchEvent(CLICK, e);
-		return false;
-	}
+//	@Override
+//	public boolean onDown(MotionEvent e) {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//
+//	@Override
+//	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
+//			float velocityY) {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//
+//	@Override
+//	public void onLongPress(MotionEvent e) {
+//		// TODO Auto-generated method stub
+//		sendTouchEvent(RIGHT_CLICK, e);
+//	}
+//
+//	@Override
+//	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
+//			float distanceY) {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//
+//	@Override
+//	public void onShowPress(MotionEvent e) {
+//		// TODO Auto-generated method stub
+//		
+//	}
+//
+//	@Override
+//	public boolean onSingleTapUp(MotionEvent e) {
+//		// TODO Auto-generated method stub
+//		sendTouchEvent(CLICK, e);
+//		return false;
+//	}
 }

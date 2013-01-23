@@ -14,6 +14,7 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
+        public static final int controlPanel=0x7f050001;
         public static final int imageView1=0x7f050000;
     }
     public static final class layout {
